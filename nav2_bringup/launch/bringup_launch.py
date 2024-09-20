@@ -70,7 +70,7 @@ def generate_launch_description():
 
     configured_params = ParameterFile(
         RewrittenYaml(
-            source_file=params_file,
+            source_file=params_file, 
             root_key=namespace,
             param_rewrites=param_substitutions,
             convert_types=True),
@@ -94,13 +94,15 @@ def generate_launch_description():
         default_value='False',
         description='Whether run a SLAM')
 
-    declare_map_yaml_cmd = DeclareLaunchArgument(
+    declare_map_yaml_cmd = DeclareLaunchArgument( 
         'map',
-        description='Full path to map yaml file to load')
+        default_value=os.path.join(
+            bringup_dir, 'maps', 'map.yaml'),
+        description='Full path to map file to load')
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
         'use_sim_time',
-        default_value='false',
+        default_value='true',
         description='Use simulation (Gazebo) clock if true')
 
     declare_params_file_cmd = DeclareLaunchArgument(
