@@ -189,11 +189,20 @@ protected:
   std::unique_ptr<ActionServerToPose> action_server_pose_;
   std::unique_ptr<ActionServerThroughPoses> action_server_poses_;
 
+  // RDsim action server implements the ComputePathToTopology action
+  std::unique_ptr<ActionServerToPose> action_server_topology_;
+
   /**
    * @brief The action server callback which calls planner to get the path
    * ComputePathToPose
    */
   void computePlan();
+
+  /**
+   * @brief The action server callback which calls planner to get the path
+   * ComputePathToTopology
+   */
+  void computeTopologyPlan();
 
   /**
    * @brief The action server callback which calls planner to get the path

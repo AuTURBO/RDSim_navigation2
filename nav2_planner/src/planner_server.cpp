@@ -147,6 +147,14 @@ PlannerServer::on_configure(const rclcpp_lifecycle::State & /*state*/)
     std::chrono::milliseconds(500),
     true);
 
+  action_server_topology_ = std::make_unique<ActionServerToPose>(
+    shared_from_this(),
+    "compute_path_to_topology",
+    std::bind(&PlannerServer::computeTopologyPlan, this),
+    nullptr,
+    std::chrono::milliseconds(500),
+    true);
+
   action_server_poses_ = std::make_unique<ActionServerThroughPoses>(
     shared_from_this(),
     "compute_path_through_poses",
@@ -166,6 +174,7 @@ PlannerServer::on_activate(const rclcpp_lifecycle::State & /*state*/)
   plan_publisher_->on_activate();
   action_server_pose_->activate();
   action_server_poses_->activate();
+  action_server_topology_->activate();
   costmap_ros_->activate();
 
   PlannerMap::iterator it;
@@ -198,6 +207,7 @@ PlannerServer::on_deactivate(const rclcpp_lifecycle::State & /*state*/)
 
   action_server_pose_->deactivate();
   action_server_poses_->deactivate();
+  action_server_topology_->deactivate();
   plan_publisher_->on_deactivate();
 
   /*
@@ -229,6 +239,7 @@ PlannerServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/)
 
   action_server_pose_.reset();
   action_server_poses_.reset();
+  action_server_topology_.reset();
   plan_publisher_.reset();
   tf_.reset();
 
@@ -505,6 +516,67 @@ PlannerServer::computePlan()
       goal->planner_id.c_str(), goal->goal.pose.position.x,
       goal->goal.pose.position.y, ex.what());
     action_server_pose_->terminate_current();
+  }
+}
+
+void
+PlannerServer::computeTopologyPlan()
+{
+  std::lock_guard<std::mutex> lock(dynamic_params_lock_);
+
+  auto start_time = this->now();
+
+  // Initialize the ComputePathToPose goal and result
+  auto goal = action_server_topology_->get_current_goal();
+  auto result = std::make_shared<ActionToPose::Result>();
+
+  try {
+    if (isServerInactive(action_server_topology_) || isCancelRequested(action_server_topology_)) {
+      return;
+    }
+
+    waitForCostmap();
+
+    getPreemptedGoalIfRequested(action_server_topology_, goal);
+
+    // Use start pose if provided otherwise use current robot pose
+    geometry_msgs::msg::PoseStamped start;
+    if (!getStartPose(action_server_topology_, goal, start)) {
+      return;
+    }
+
+    // Transform them into the global frame
+    geometry_msgs::msg::PoseStamped goal_pose = goal->goal;
+    if (!transformPosesToGlobalFrame(action_server_topology_, start, goal_pose)) {
+      return;
+    }
+
+    result->path = getPlan(start, goal_pose, goal->planner_id);
+
+    if (!validatePath(action_server_topology_, goal_pose, result->path, goal->planner_id)) {
+      return;
+    }
+
+    // Publish the plan for visualization purposes
+    publishPlan(result->path);
+
+    auto cycle_duration = this->now() - start_time;
+    result->planning_time = cycle_duration;
+
+    if (max_planner_duration_ && cycle_duration.seconds() > max_planner_duration_) {
+      RCLCPP_WARN(
+        get_logger(),
+        "Planner loop missed its desired rate of %.4f Hz. Current loop rate is %.4f Hz",
+        1 / max_planner_duration_, 1 / cycle_duration.seconds());
+    }
+
+    action_server_topology_->succeeded_current(result);
+  } catch (std::exception & ex) {
+    RCLCPP_WARN(
+      get_logger(), "%s plugin failed to plan calculation to (%.2f, %.2f): \"%s\"",
+      goal->planner_id.c_str(), goal->goal.pose.position.x,
+      goal->goal.pose.position.y, ex.what());
+    action_server_topology_->terminate_current();
   }
 }
 
