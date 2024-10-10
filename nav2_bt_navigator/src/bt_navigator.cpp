@@ -120,7 +120,7 @@ BtNavigator::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Libraries to pull plugins (BT Nodes) from
   auto plugin_lib_names = get_parameter("plugin_lib_names").as_string_array();
 
-  pose_navigator_ = std::make_unique<nav2_bt_navigator::NavigateToPoseNavigator>();
+  pose_navigator_ = std::make_unique<nav2_bt_navigator::NavigateToTopologyNavigator>();
   poses_navigator_ = std::make_unique<nav2_bt_navigator::NavigateThroughPosesNavigator>();
 
   nav2_bt_navigator::FeedbackUtils feedback_utils;

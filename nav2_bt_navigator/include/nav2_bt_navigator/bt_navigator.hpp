@@ -26,6 +26,7 @@
 #include "tf2_ros/transform_listener.h"
 #include "tf2_ros/create_timer_ros.h"
 #include "nav2_bt_navigator/navigators/navigate_to_pose.hpp"
+#include "nav2_bt_navigator/navigators/navigate_to_topology.hpp"
 #include "nav2_bt_navigator/navigators/navigate_through_poses.hpp"
 
 namespace nav2_bt_navigator
