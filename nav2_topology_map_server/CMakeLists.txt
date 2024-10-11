@@ -15,7 +15,10 @@ find_package(nav_msgs REQUIRED)
 find_package(nav2_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(tf2 REQUIRED)
+find_package(yaml_cpp_vendor REQUIRED)
 find_package(nav2_util REQUIRED)
+find_package(visualization_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
@@ -41,6 +44,9 @@ set(map_server_dependencies
   nav_msgs
   nav2_msgs
   std_msgs
+  visualization_msgs
+  geometry_msgs
+  yaml_cpp_vendor
   nav2_util)
 
 ament_target_dependencies(${topology_map_server_executable}
