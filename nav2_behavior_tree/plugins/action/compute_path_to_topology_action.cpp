@@ -22,9 +22,21 @@ namespace nav2_behavior_tree {
 ComputePathToTopologyAction::ComputePathToTopologyAction(const std::string &xml_tag_name,
                                                          const std::string &action_name,
                                                          const BT::NodeConfiguration &conf)
-    : BtActionNode<nav2_msgs::action::ComputePathToTopology>(xml_tag_name, action_name, conf) {}
+    : BtActionNode<nav2_msgs::action::ComputePathToTopology>(xml_tag_name, action_name, conf) {
+  node_ = config().blackboard->get<rclcpp::Node::SharedPtr>("node");
+  topology_map_client_ = node_->create_client<nav2_msgs::srv::GetTopologyMap>("get_topology_map");
+  server_timeout_ = config().blackboard->template get<std::chrono::milliseconds>("server_timeout");
+  getInput<std::chrono::milliseconds>("server_timeout", server_timeout_);
+}
 
 void ComputePathToTopologyAction::on_tick() {
+  auto request = std::make_shared<nav2_msgs::srv::GetTopologyMap::Request>();
+  auto result = topology_map_client_->async_send_request(request);
+
+  if (rclcpp::spin_until_future_complete(node_, result, server_timeout_) == rclcpp::FutureReturnCode::SUCCESS) {
+    goal_.topology_map = result.get()->topology;
+  }
+
   getInput("start_vertex_id", goal_.start_vertex_id);
   getInput("end_vertex_id", goal_.end_vertex_id);
   if (getInput("start", goal_.start)) {

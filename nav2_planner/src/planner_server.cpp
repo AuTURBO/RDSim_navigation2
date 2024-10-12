@@ -120,6 +120,7 @@ nav2_util::CallbackReturn PlannerServer::on_configure(const rclcpp_lifecycle::St
 
   // Initialize pubs & subs
   plan_publisher_ = create_publisher<nav_msgs::msg::Path>("plan", 1);
+  // topology_map_client_ = create_client<nav2_msgs::srv::GetTopologyMap>("get_topology_map");
 
   // Create the action servers for path planning to a pose and through poses
   action_server_pose_ = std::make_unique<ActionServerToPose>(shared_from_this(), "compute_path_to_pose",
@@ -446,12 +447,14 @@ void PlannerServer::computePlan() {
 }
 
 void PlannerServer::computeTopologyPlan() {
+  RCLCPP_INFO(get_logger(), "ComputeTopologyPlan!!");
   std::lock_guard<std::mutex> lock(dynamic_params_lock_);
 
   auto start_time = this->now();
 
   // Initialize the ComputePathToPose goal and result
   auto goal = action_server_topology_->get_current_goal();
+
   std::vector<geometry_msgs::msg::PoseStamped> goals;
 
   auto result = std::make_shared<ActionToTopology::Result>();
@@ -463,8 +466,25 @@ void PlannerServer::computeTopologyPlan() {
     }
 
     waitForCostmap();
-
     getPreemptedGoalIfRequested(action_server_topology_, goal);
+
+    const auto &topology_map{goal->topology_map};
+
+    geometry_msgs::msg::PoseStamped pose_stamped;
+    pose_stamped.header.frame_id = "map";
+    pose_stamped.header.stamp = get_clock()->now();
+    pose_stamped.pose = topology_map.vertices[0].pose;
+
+    geometry_msgs::msg::PoseStamped pose_stamped2;
+    pose_stamped2.header.frame_id = "map";
+    pose_stamped2.header.stamp = get_clock()->now();
+    pose_stamped2.pose = topology_map.vertices[1].pose;
+
+    goals.push_back(pose_stamped);
+    goals.push_back(pose_stamped2);
+
+    // const auto &topologyMap = service_result.get()->topology;
+    // RCLCPP_INFO(get_logger(), "topology map size: %ld", topologyMap.vertices.size());
 
     if (goals.size() == 0) {
       RCLCPP_WARN(get_logger(), "Compute path through poses requested a plan with no viapoint poses, returning.");

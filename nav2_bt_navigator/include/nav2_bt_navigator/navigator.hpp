@@ -16,26 +16,24 @@
 #define NAV2_BT_NAVIGATOR__NAVIGATOR_HPP_
 
 #include <memory>
+#include <mutex>
 #include <string>
 #include <vector>
-#include <mutex>
 
+#include "nav2_behavior_tree/bt_action_server.hpp"
 #include "nav2_util/odometry_utils.hpp"
-#include "tf2_ros/buffer.h"
+#include "pluginlib/class_loader.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp_lifecycle/lifecycle_node.hpp"
-#include "pluginlib/class_loader.hpp"
-#include "nav2_behavior_tree/bt_action_server.hpp"
+#include "tf2_ros/buffer.h"
 
-namespace nav2_bt_navigator
-{
+namespace nav2_bt_navigator {
 
 /**
  * @struct FeedbackUtils
  * @brief Navigator feedback utilities required to get transforms and reference frames.
  */
-struct FeedbackUtils
-{
+struct FeedbackUtils {
   std::string robot_frame;
   std::string global_frame;
   double transform_tolerance;
@@ -47,21 +45,18 @@ struct FeedbackUtils
  * @brief A class to control the state of the BT navigator by allowing only a single
  * plugin to be processed at a time.
  */
-class NavigatorMuxer
-{
+class NavigatorMuxer {
 public:
   /**
    * @brief A Navigator Muxer constructor
    */
-  NavigatorMuxer()
-  : current_navigator_(std::string("")) {}
+  NavigatorMuxer() : current_navigator_(std::string("")) {}
 
   /**
    * @brief Get the navigator muxer state
    * @return bool If a navigator is in progress
    */
-  bool isNavigating()
-  {
+  bool isNavigating() {
     std::scoped_lock l(mutex_);
     return !current_navigator_.empty();
   }
@@ -70,15 +65,12 @@ public:
    * @brief Start navigating with a given navigator
    * @param string Name of the navigator to start
    */
-  void startNavigating(const std::string & navigator_name)
-  {
+  void startNavigating(const std::string &navigator_name) {
     std::scoped_lock l(mutex_);
     if (!current_navigator_.empty()) {
-      RCLCPP_ERROR(
-        rclcpp::get_logger("NavigatorMutex"),
-        "Major error! Navigation requested while another navigation"
-        " task is in progress! This likely occurred from an incorrect"
-        "implementation of a navigator plugin.");
+      RCLCPP_ERROR(rclcpp::get_logger("NavigatorMutex"), "Major error! Navigation requested while another navigation"
+                                                         " task is in progress! This likely occurred from an incorrect"
+                                                         "implementation of a navigator plugin.");
     }
     current_navigator_ = navigator_name;
   }
@@ -87,15 +79,12 @@ public:
    * @brief Stop navigating with a given navigator
    * @param string Name of the navigator ending task
    */
-  void stopNavigating(const std::string & navigator_name)
-  {
+  void stopNavigating(const std::string &navigator_name) {
     std::scoped_lock l(mutex_);
     if (current_navigator_ != navigator_name) {
-      RCLCPP_ERROR(
-        rclcpp::get_logger("NavigatorMutex"),
-        "Major error! Navigation stopped while another navigation"
-        " task is in progress! This likely occurred from an incorrect"
-        "implementation of a navigator plugin.");
+      RCLCPP_ERROR(rclcpp::get_logger("NavigatorMutex"), "Major error! Navigation stopped while another navigation"
+                                                         " task is in progress! This likely occurred from an incorrect"
+                                                         "implementation of a navigator plugin.");
     } else {
       current_navigator_ = std::string("");
     }
@@ -110,19 +99,14 @@ protected:
  * @class Navigator
  * @brief Navigator interface that acts as a base class for all BT-based Navigator action's plugins
  */
-template<class ActionT>
-class Navigator
-{
+template <class ActionT> class Navigator {
 public:
   using Ptr = std::shared_ptr<nav2_bt_navigator::Navigator<ActionT>>;
 
   /**
    * @brief A Navigator constructor
    */
-  Navigator()
-  {
-    plugin_muxer_ = nullptr;
-  }
+  Navigator() { plugin_muxer_ = nullptr; }
 
   /**
    * @brief Virtual destructor
@@ -139,13 +123,10 @@ public:
    * @param odom_smoother Object to get current smoothed robot's speed
    * @return bool If successful
    */
-  bool on_configure(
-    rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node,
-    const std::vector<std::string> & plugin_lib_names,
-    const FeedbackUtils & feedback_utils,
-    nav2_bt_navigator::NavigatorMuxer * plugin_muxer,
-    std::shared_ptr<nav2_util::OdomSmoother> odom_smoother)
-  {
+  bool on_configure(rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node,
+                    const std::vector<std::string> &plugin_lib_names, const FeedbackUtils &feedback_utils,
+                    nav2_bt_navigator::NavigatorMuxer *plugin_muxer,
+                    std::shared_ptr<nav2_util::OdomSmoother> odom_smoother) {
     auto node = parent_node.lock();
     logger_ = node->get_logger();
     clock_ = node->get_clock();
@@ -157,14 +138,10 @@ public:
 
     // Create the Behavior Tree Action Server for this navigator
     bt_action_server_ = std::make_unique<nav2_behavior_tree::BtActionServer<ActionT>>(
-      node,
-      getName(),
-      plugin_lib_names,
-      default_bt_xml_filename,
-      std::bind(&Navigator::onGoalReceived, this, std::placeholders::_1),
-      std::bind(&Navigator::onLoop, this),
-      std::bind(&Navigator::onPreempt, this, std::placeholders::_1),
-      std::bind(&Navigator::onCompletion, this, std::placeholders::_1, std::placeholders::_2));
+        node, getName(), plugin_lib_names, default_bt_xml_filename,
+        std::bind(&Navigator::onGoalReceived, this, std::placeholders::_1), std::bind(&Navigator::onLoop, this),
+        std::bind(&Navigator::onPreempt, this, std::placeholders::_1),
+        std::bind(&Navigator::onCompletion, this, std::placeholders::_1, std::placeholders::_2));
 
     bool ok = true;
     if (!bt_action_server_->on_configure()) {
@@ -172,10 +149,10 @@ public:
     }
 
     BT::Blackboard::Ptr blackboard = bt_action_server_->getBlackboard();
-    blackboard->set<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer", feedback_utils.tf);  // NOLINT
-    blackboard->set<bool>("initial_pose_received", false);  // NOLINT
-    blackboard->set<int>("number_recoveries", 0);  // NOLINT
-    blackboard->set<std::shared_ptr<nav2_util::OdomSmoother>>("odom_smoother", odom_smoother);  // NOLINT
+    blackboard->set<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer", feedback_utils.tf);         // NOLINT
+    blackboard->set<bool>("initial_pose_received", false);                                     // NOLINT
+    blackboard->set<int>("number_recoveries", 0);                                              // NOLINT
+    blackboard->set<std::shared_ptr<nav2_util::OdomSmoother>>("odom_smoother", odom_smoother); // NOLINT
 
     return configure(parent_node, odom_smoother) && ok;
   }
@@ -184,8 +161,7 @@ public:
    * @brief Activation of the navigator's backend BT and actions
    * @return bool If successful
    */
-  bool on_activate()
-  {
+  bool on_activate() {
     bool ok = true;
 
     if (!bt_action_server_->on_activate()) {
@@ -199,8 +175,7 @@ public:
    * @brief Deactivation of the navigator's backend BT and actions
    * @return bool If successful
    */
-  bool on_deactivate()
-  {
+  bool on_deactivate() {
     bool ok = true;
     if (!bt_action_server_->on_deactivate()) {
       ok = false;
@@ -213,8 +188,7 @@ public:
    * @brief Cleanup a navigator
    * @return bool If successful
    */
-  bool on_cleanup()
-  {
+  bool on_cleanup() {
     bool ok = true;
     if (!bt_action_server_->on_cleanup()) {
       ok = false;
@@ -237,22 +211,18 @@ public:
    * @brief Get the action server
    * @return Action server pointer
    */
-  std::unique_ptr<nav2_behavior_tree::BtActionServer<ActionT>> & getActionServer()
-  {
-    return bt_action_server_;
-  }
+  std::unique_ptr<nav2_behavior_tree::BtActionServer<ActionT>> &getActionServer() { return bt_action_server_; }
 
 protected:
   /**
    * @brief An intermediate goal reception function to mux navigators.
    */
-  bool onGoalReceived(typename ActionT::Goal::ConstSharedPtr goal)
-  {
+  bool onGoalReceived(typename ActionT::Goal::ConstSharedPtr goal) {
     if (plugin_muxer_->isNavigating()) {
-      RCLCPP_ERROR(
-        logger_,
-        "Requested navigation from %s while another navigator is processing,"
-        " rejecting request.", getName().c_str());
+      RCLCPP_ERROR(logger_,
+                   "Requested navigation from %s while another navigator is processing,"
+                   " rejecting request.",
+                   getName().c_str());
       return false;
     }
 
@@ -268,10 +238,7 @@ protected:
   /**
    * @brief An intermediate completion function to mux navigators
    */
-  void onCompletion(
-    typename ActionT::Result::SharedPtr result,
-    const nav2_behavior_tree::BtStatus final_bt_status)
-  {
+  void onCompletion(typename ActionT::Result::SharedPtr result, const nav2_behavior_tree::BtStatus final_bt_status) {
     plugin_muxer_->stopNavigating(getName());
     goalCompleted(result, final_bt_status);
   }
@@ -298,42 +265,39 @@ protected:
    * @brief A callback that is called when a the action is completed; Can fill in
    * action result message or indicate that this action is done.
    */
-  virtual void goalCompleted(
-    typename ActionT::Result::SharedPtr result,
-    const nav2_behavior_tree::BtStatus final_bt_status) = 0;
+  virtual void goalCompleted(typename ActionT::Result::SharedPtr result,
+                             const nav2_behavior_tree::BtStatus final_bt_status) = 0;
 
   /**
    * @param Method to configure resources.
    */
-  virtual bool configure(
-    rclcpp_lifecycle::LifecycleNode::WeakPtr /*node*/,
-    std::shared_ptr<nav2_util::OdomSmoother>/*odom_smoother*/)
-  {
+  virtual bool configure(rclcpp_lifecycle::LifecycleNode::WeakPtr /*node*/,
+                         std::shared_ptr<nav2_util::OdomSmoother> /*odom_smoother*/) {
     return true;
   }
 
   /**
    * @brief Method to cleanup resources.
    */
-  virtual bool cleanup() {return true;}
+  virtual bool cleanup() { return true; }
 
   /**
    * @brief Method to activate any threads involved in execution.
    */
-  virtual bool activate() {return true;}
+  virtual bool activate() { return true; }
 
   /**
    * @brief Method to deactivate and any threads involved in execution.
    */
-  virtual bool deactivate() {return true;}
+  virtual bool deactivate() { return true; }
 
   std::unique_ptr<nav2_behavior_tree::BtActionServer<ActionT>> bt_action_server_;
   rclcpp::Logger logger_{rclcpp::get_logger("Navigator")};
   rclcpp::Clock::SharedPtr clock_;
   FeedbackUtils feedback_utils_;
-  NavigatorMuxer * plugin_muxer_;
+  NavigatorMuxer *plugin_muxer_;
 };
 
-}  // namespace nav2_bt_navigator
+} // namespace nav2_bt_navigator
 
-#endif  // NAV2_BT_NAVIGATOR__NAVIGATOR_HPP_
+#endif // NAV2_BT_NAVIGATOR__NAVIGATOR_HPP_

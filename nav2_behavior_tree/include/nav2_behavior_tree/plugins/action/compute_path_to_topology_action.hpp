@@ -20,6 +20,8 @@
 #include "nav2_behavior_tree/bt_action_node.hpp"
 #include "nav2_msgs/action/compute_path_through_poses.hpp"
 #include "nav2_msgs/action/compute_path_to_topology.hpp"
+#include "nav2_msgs/msg/topology_map.hpp"
+#include "nav2_msgs/srv/get_topology_map.hpp"
 #include "nav_msgs/msg/path.h"
 
 namespace nav2_behavior_tree {
@@ -70,13 +72,19 @@ public:
   static BT::PortsList providedPorts() {
     return providedBasicPorts({
         BT::OutputPort<nav_msgs::msg::Path>("path", "Path created by ComputePathToPose node"),
-        BT::InputPort<int16_t>("start_vertex_id", "start_vertex_id"),
-        BT::InputPort<int16_t>("end_vertex_id", "end_vertex_id"),
+        BT::InputPort<int>("start_vertex_id", "start_vertex_id"),
+        BT::InputPort<int>("end_vertex_id", "end_vertex_id"),
+        BT::InputPort<nav2_msgs::msg::TopologyMap>("topology_map", "topology_map"),
         BT::InputPort<geometry_msgs::msg::PoseStamped>("start",
                                                        "Start pose of the path if overriding current robot pose"),
         BT::InputPort<std::string>("planner_id", "", "Mapped name to the planner plugin type to use"),
     });
   }
+
+private:
+  rclcpp::Node::SharedPtr node_;
+  rclcpp::Client<nav2_msgs::srv::GetTopologyMap>::SharedPtr topology_map_client_;
+  std::chrono::milliseconds server_timeout_;
 };
 
 } // namespace nav2_behavior_tree

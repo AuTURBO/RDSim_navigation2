@@ -1,6 +1,7 @@
 #goal definition
 int16 start_vertex_id
 int16 end_vertex_id
+nav2_msgs/TopologyMap topology_map
 geometry_msgs/PoseStamped start
 string planner_id
 bool use_start # If false, use current robot pose as path start, if true, use start above instead

@@ -30,6 +30,7 @@
 #include "nav2_msgs/action/compute_path_to_pose.hpp"
 #include "nav2_msgs/action/compute_path_to_topology.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
+#include "nav2_msgs/srv/get_topology_map.hpp"
 #include "nav2_msgs/srv/is_path_valid.hpp"
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_util/robot_utils.hpp"
@@ -248,6 +249,7 @@ protected:
 
   // Service to deterime if the path is valid
   rclcpp::Service<nav2_msgs::srv::IsPathValid>::SharedPtr is_path_valid_service_;
+  // rclcpp::Client<nav2_msgs::srv::GetTopologyMap>::SharedPtr topology_map_client_;
 };
 
 } // namespace nav2_planner
