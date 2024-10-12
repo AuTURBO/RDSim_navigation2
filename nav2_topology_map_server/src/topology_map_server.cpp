@@ -7,6 +7,7 @@ TopologyMapServer::TopologyMapServer(const rclcpp::NodeOptions &options)
 
   declare_parameter("topology_yaml_filename", rclcpp::PARAMETER_STRING);
   declare_parameter("topic_name", "topology_map/path");
+  declare_parameter("service_name", "get_topology_map");
   declare_parameter("frame_id", "map");
 }
 
@@ -18,12 +19,34 @@ nav2_util::CallbackReturn TopologyMapServer::on_configure(const rclcpp_lifecycle
 
   std::string yaml_filename{get_parameter("topology_yaml_filename").as_string()};
   std::string topic_name{get_parameter("topic_name").as_string()};
+  std::string service_name{get_parameter("service_name").as_string()};
   frame_id_ = get_parameter("frame_id").as_string();
 
   RCLCPP_INFO(get_logger(), "topology_filename: %s", yaml_filename.c_str());
 
   load_map_yaml_file(yaml_filename);
 
+  topology_service_ = create_service<nav2_msgs::srv::GetTopologyMap>(
+      service_name,
+      [&]([[maybe_unused]] const std::shared_ptr<nav2_msgs::srv::GetTopologyMap::Request> request,
+          std::shared_ptr<nav2_msgs::srv::GetTopologyMap::Response> response) -> void {
+        if (map_updated_) {
+          cached_topology_map_.header.frame_id = frame_id_;
+          cached_topology_map_.header.stamp = get_clock()->now();
+          cached_topology_map_.vertices = vertices_;
+
+          std::vector<int16_t> edges;
+          for (size_t i = 0; i < edges_.size(); ++i) {
+            for (size_t j = 0; j < edges_[i].size(); ++j) {
+              edges.push_back(edges_[i][j]);
+            }
+          }
+
+          cached_topology_map_.edges = edges;
+          map_updated_ = false;
+        }
+        response->topology = cached_topology_map_;
+      });
   map_visual_pub_ = create_publisher<visualization_msgs::msg::MarkerArray>(
       topic_name, rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 
@@ -65,6 +88,7 @@ nav2_util::CallbackReturn TopologyMapServer::on_deactivate(const rclcpp_lifecycl
 nav2_util::CallbackReturn TopologyMapServer::on_cleanup(const rclcpp_lifecycle::State & /*state*/) {
   RCLCPP_INFO(get_logger(), "Cleaning up");
   map_visual_pub_.reset();
+  topology_service_.reset();
 
   return nav2_util::CallbackReturn::SUCCESS;
 }
@@ -86,14 +110,17 @@ void TopologyMapServer::load_map_yaml_file(const std::string &yaml_filename) {
   vertices_.reserve(vertex_size);
 
   for (const auto &vertexNode : config["topology_map"]["vertexs"]) {
-    Vertex vertex;
+    nav2_msgs::msg::TopologyVertex vertex;
     geometry_msgs::msg::Point point;
+    geometry_msgs::msg::Pose pose;
 
-    point.x = vertexNode["pose"]["x"].as<double>();
-    point.y = vertexNode["pose"]["y"].as<double>();
-    point.z = vertexNode["pose"]["z"].as<double>();
+    pose.position.x = vertexNode["pose"]["x"].as<double>();
+    pose.position.y = vertexNode["pose"]["y"].as<double>();
+    pose.position.z = vertexNode["pose"]["z"].as<double>();
+    pose.orientation.w = 1.0;
+
     vertex.id = vertexNode["id"].as<int>();
-    vertex.point = point;
+    vertex.pose = std::move(pose);
     vertex.status = vertexNode["status"].as<std::string>();
 
     vertices_.push_back(std::move(vertex));
@@ -146,10 +173,10 @@ visualization_msgs::msg::MarkerArray TopologyMapServer::get_visual_map() {
   label_marker.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
   label_marker.action = visualization_msgs::msg::Marker::ADD;
   label_marker.scale.z = 0.3; // Text size
-  label_marker.color.r = 1.0; // White color for text
-  label_marker.color.g = 1.0;
-  label_marker.color.b = 1.0;
-  label_marker.color.a = 1.0; // Full opacity
+  label_marker.color.r = 0.0; // White color for text
+  label_marker.color.g = 0.0;
+  label_marker.color.b = 0.0;
+  label_marker.color.a = 0.5; // Full opacity
 
   double min_weight = std::numeric_limits<double>::max();
   double max_weight = std::numeric_limits<double>::min();
@@ -167,11 +194,11 @@ visualization_msgs::msg::MarkerArray TopologyMapServer::get_visual_map() {
   int vertex_id = 0;
   for (const auto &vertex : vertices_) {
     vertex_marker.id = vertex_id++; // Unique ID for each vertex marker
-    vertex_marker.pose.position = vertex.point;
+    vertex_marker.pose.position = vertex.pose.position;
     marker_array.markers.push_back(vertex_marker);
 
     label_marker.id = vertex_id; // Unique ID for each text marker
-    label_marker.pose.position = vertex.point;
+    label_marker.pose.position = vertex.pose.position;
     label_marker.pose.position.z = 0.2;
     label_marker.text = "ID: " + std::to_string(vertex.id);
 
@@ -189,8 +216,8 @@ visualization_msgs::msg::MarkerArray TopologyMapServer::get_visual_map() {
         color.g = 1.0 - normalized_weight; // Green increases as weight increases
         color.b = 0.0;                     // Blue remains 0 for the red-to-green gradient
 
-        line_list_marker.points.push_back(vertices_[i].point);
-        line_list_marker.points.push_back(vertices_[j].point);
+        line_list_marker.points.push_back(vertices_[i].pose.position);
+        line_list_marker.points.push_back(vertices_[j].pose.position);
         line_list_marker.colors.push_back(color); // Color for the start of the line
         line_list_marker.colors.push_back(color); // Color for the end of the line
       }

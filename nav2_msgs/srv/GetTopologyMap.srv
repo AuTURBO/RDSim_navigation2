@@ -1,0 +1,5 @@
+# Get the TopologyMap
+
+std_msgs/Empty request
+---
+nav2_msgs/TopologyMap topology
