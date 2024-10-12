@@ -15,64 +15,49 @@
 #ifndef NAV2_BT_NAVIGATOR__NAVIGATORS__NAVIGATE_TO_TOPOLOGY_HPP_
 #define NAV2_BT_NAVIGATOR__NAVIGATORS__NAVIGATE_TO_TOPOLOGY_HPP_
 
-#include <string>
-#include <vector>
-#include <memory>
-#include "rclcpp/rclcpp.hpp"
-#include "rclcpp_action/rclcpp_action.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav2_bt_navigator/navigator.hpp"
 #include "nav2_msgs/action/navigate_to_pose.hpp"
+#include "nav2_msgs/action/navigate_to_topology.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "nav2_util/odometry_utils.hpp"
 #include "nav2_util/robot_utils.hpp"
 #include "nav_msgs/msg/path.hpp"
-#include "nav2_util/odometry_utils.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "rclcpp_action/rclcpp_action.hpp"
+#include <memory>
+#include <string>
+#include <vector>
 
-namespace nav2_bt_navigator
-{
+namespace nav2_bt_navigator {
 
 /**
  * @class NavigateToTopologyNavigator
  * @brief A navigator for navigating to a specified pose
  */
-class NavigateToTopologyNavigator
-  : public nav2_bt_navigator::Navigator<nav2_msgs::action::NavigateToPose>
-{
+class NavigateToTopologyNavigator : public nav2_bt_navigator::Navigator<nav2_msgs::action::NavigateToTopology> {
 public:
-  using ActionT = nav2_msgs::action::NavigateToPose;
+  using ActionT = nav2_msgs::action::NavigateToTopology;
+  typedef std::vector<geometry_msgs::msg::PoseStamped> Goals;
 
   /**
-   * @brief A constructor for NavigateToTopologyNavigator
+   * @brief A constructor for NavigateThroughPosesNavigator
    */
-  NavigateToTopologyNavigator()
-  : Navigator() {}
+  NavigateToTopologyNavigator() : Navigator() {}
 
   /**
    * @brief A configure state transition to configure navigator's state
    * @param node Weakptr to the lifecycle node
    * @param odom_smoother Object to get current smoothed robot's speed
    */
-  bool configure(
-    rclcpp_lifecycle::LifecycleNode::WeakPtr node,
-    std::shared_ptr<nav2_util::OdomSmoother> odom_smoother) override;
-
-  /**
-   * @brief A cleanup state transition to remove memory allocated
-   */
-  bool cleanup() override;
-
-  /**
-   * @brief A subscription and callback to handle the topic-based goal published
-   * from rviz
-   * @param pose Pose received via atopic
-   */
-  void onGoalPoseReceived(const geometry_msgs::msg::PoseStamped::SharedPtr pose);
+  bool configure(rclcpp_lifecycle::LifecycleNode::WeakPtr node,
+                 std::shared_ptr<nav2_util::OdomSmoother> odom_smoother) override;
 
   /**
    * @brief Get action name for this navigator
    * @return string Name of action server
    */
-  std::string getName() override {return std::string("navigate_to_pose");}
+  std::string getName() override { return std::string("navigate_through_poses"); }
 
   /**
    * @brief Get navigator's default BT
@@ -109,28 +94,24 @@ protected:
    * @param final_bt_status Resulting status of the behavior tree execution that may be
    * referenced while populating the result.
    */
-  void goalCompleted(
-    typename ActionT::Result::SharedPtr result,
-    const nav2_behavior_tree::BtStatus final_bt_status) override;
+  void goalCompleted(typename ActionT::Result::SharedPtr result,
+                     const nav2_behavior_tree::BtStatus final_bt_status) override;
 
   /**
    * @brief Goal pose initialization on the blackboard
-   * @param goal Action template's goal message to process
    */
-  void initializeGoalPose(ActionT::Goal::ConstSharedPtr goal);
+  void initializeGoalPoses(ActionT::Goal::ConstSharedPtr goal);
 
   rclcpp::Time start_time_;
-
-  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr goal_sub_;
-  rclcpp_action::Client<ActionT>::SharedPtr self_client_;
-
-  std::string goal_blackboard_id_;
+  std::string start_blackboard_id_;
+  std::string end_blackboard_id_;
   std::string path_blackboard_id_;
+  std::string goals_blackboard_id_;
 
   // Odometry smoother object
   std::shared_ptr<nav2_util::OdomSmoother> odom_smoother_;
 };
 
-}  // namespace nav2_bt_navigator
+} // namespace nav2_bt_navigator
 
-#endif  // NAV2_BT_NAVIGATOR__NAVIGATORS__NAVIGATE_TO_TOPOLOGY_HPP_
+#endif // NAV2_BT_NAVIGATOR__NAVIGATORS__NAVIGATE_TO_TOPOLOGY_HPP_

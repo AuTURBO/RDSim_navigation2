@@ -17,18 +17,17 @@
 
 #include <string>
 
-#include "nav2_msgs/action/compute_path_to_pose.hpp"
-#include "nav_msgs/msg/path.h"
 #include "nav2_behavior_tree/bt_action_node.hpp"
+#include "nav2_msgs/action/compute_path_through_poses.hpp"
+#include "nav2_msgs/action/compute_path_to_topology.hpp"
+#include "nav_msgs/msg/path.h"
 
-namespace nav2_behavior_tree
-{
+namespace nav2_behavior_tree {
 
 /**
  * @brief A nav2_behavior_tree::BtActionNode class that wraps nav2_msgs::action::ComputePathToPose
  */
-class ComputePathToTopologyAction : public BtActionNode<nav2_msgs::action::ComputePathToPose>
-{
+class ComputePathToTopologyAction : public BtActionNode<nav2_msgs::action::ComputePathToTopology> {
 public:
   /**
    * @brief A constructor for nav2_behavior_tree::ComputePathToTopologyAction
@@ -36,10 +35,8 @@ public:
    * @param action_name Action name this node creates a client for
    * @param conf BT node configuration
    */
-  ComputePathToTopologyAction(
-    const std::string & xml_tag_name,
-    const std::string & action_name,
-    const BT::NodeConfiguration & conf);
+  ComputePathToTopologyAction(const std::string &xml_tag_name, const std::string &action_name,
+                              const BT::NodeConfiguration &conf);
 
   /**
    * @brief Function to perform some user-defined operation on tick
@@ -70,21 +67,18 @@ public:
    * @brief Creates list of BT ports
    * @return BT::PortsList Containing basic ports along with node-specific ports
    */
-  static BT::PortsList providedPorts()
-  {
-    return providedBasicPorts(
-      {
+  static BT::PortsList providedPorts() {
+    return providedBasicPorts({
         BT::OutputPort<nav_msgs::msg::Path>("path", "Path created by ComputePathToPose node"),
-        BT::InputPort<geometry_msgs::msg::PoseStamped>("goal", "Destination to plan to"),
-        BT::InputPort<geometry_msgs::msg::PoseStamped>(
-          "start", "Start pose of the path if overriding current robot pose"),
-        BT::InputPort<std::string>(
-          "planner_id", "",
-          "Mapped name to the planner plugin type to use"),
-      });
+        BT::InputPort<int16_t>("start_vertex_id", "start_vertex_id"),
+        BT::InputPort<int16_t>("end_vertex_id", "end_vertex_id"),
+        BT::InputPort<geometry_msgs::msg::PoseStamped>("start",
+                                                       "Start pose of the path if overriding current robot pose"),
+        BT::InputPort<std::string>("planner_id", "", "Mapped name to the planner plugin type to use"),
+    });
   }
 };
 
-}  // namespace nav2_behavior_tree
+} // namespace nav2_behavior_tree
 
-#endif  // NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__COMPUTE_PATH_TO_TOPOLOGY_ACTION_HPP_
+#endif // NAV2_BEHAVIOR_TREE__PLUGINS__ACTION__COMPUTE_PATH_TO_TOPOLOGY_ACTION_HPP_
