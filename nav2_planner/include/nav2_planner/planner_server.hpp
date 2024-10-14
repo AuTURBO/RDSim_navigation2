@@ -29,7 +29,6 @@
 #include "nav2_costmap_2d/costmap_2d_ros.hpp"
 #include "nav2_msgs/action/compute_path_through_poses.hpp"
 #include "nav2_msgs/action/compute_path_to_pose.hpp"
-#include "nav2_msgs/action/compute_path_to_topology.hpp"
 #include "nav2_msgs/msg/costmap.hpp"
 #include "nav2_msgs/srv/get_topology_map.hpp"
 #include "nav2_msgs/srv/is_path_valid.hpp"
@@ -106,10 +105,8 @@ protected:
 
   using ActionToPose = nav2_msgs::action::ComputePathToPose;
   using ActionThroughPoses = nav2_msgs::action::ComputePathThroughPoses;
-  using ActionToTopology = nav2_msgs::action::ComputePathToTopology;
   using ActionServerToPose = nav2_util::SimpleActionServer<ActionToPose>;
   using ActionServerThroughPoses = nav2_util::SimpleActionServer<ActionThroughPoses>;
-  using ActionServerToTopology = nav2_util::SimpleActionServer<ActionToTopology>;
 
   /**
    * @brief Check if an action server is valid / active
@@ -188,7 +185,6 @@ protected:
   std::unique_ptr<ActionServerThroughPoses> action_server_poses_;
 
   // RDsim action server implements the ComputePathToTopology action
-  std::unique_ptr<ActionServerToTopology> action_server_topology_;
 
   /**
    * @brief The action server callback which calls planner to get the path
