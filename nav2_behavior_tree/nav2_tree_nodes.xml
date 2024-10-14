@@ -200,13 +200,11 @@
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
-    <Action ID="ComputePathToTopology">
-      <input_port name="goal">Destination to plan to</input_port>
-      <input_port name="start">Start pose of the path if overriding current robot pose</input_port>
-      <input_port name="planner_id">Mapped name to the planner plugin type to use</input_port>
-      <input_port name="server_name">Server name</input_port>
-      <input_port name="server_timeout">Server timeout</input_port>
-      <output_port name="path">Path created by ComputePathToTopology node</output_port>
+    <Action ID="ComputeGoalToTopology">
+      <input_port name="start_vertex_id">start_vertex_id</input_port>
+      <input_port name="end_vertex_id">end_vertex_id</input_port>
+      <input_port name="input_goals">input_goals</input_port>
+      <input_port name="output_goals">output_goals</input_port>
     </Action>
 
     <!-- ############################### CONDITION NODES ############################## -->

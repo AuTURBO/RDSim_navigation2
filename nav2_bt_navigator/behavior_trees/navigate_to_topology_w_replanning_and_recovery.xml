@@ -10,8 +10,9 @@
         <RateController hz="0.333">
           <RecoveryNode number_of_retries="1" name="ComputePathToTopology">
             <ReactiveSequence>
+              <ComputeGoalToTopology start_vertex_id="{start_vertex_id}" end_vertex_id="{end_vertex_id}" input_goals="{goals}" output_goals="{goals}" />
               <RemovePassedGoals input_goals="{goals}" output_goals="{goals}" radius="0.7"/>
-              <ComputePathToTopology start_vertex_id="{start_vertex_id}" end_vertex_id="{end_vertex_id}" path="{path}" planner_id="GridBased"/>
+              <ComputePathThroughPoses goals="{goals}" path="{path}" planner_id="GridBased"/>
             </ReactiveSequence>
             <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
           </RecoveryNode>

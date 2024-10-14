@@ -152,20 +152,20 @@ visualization_msgs::msg::MarkerArray TopologyMapServer::get_visual_map() {
   line_list_marker.id = 0;
   line_list_marker.type = visualization_msgs::msg::Marker::LINE_LIST;
   line_list_marker.action = visualization_msgs::msg::Marker::ADD;
-  line_list_marker.scale.x = 0.1; // Line width
+  line_list_marker.scale.x = 0.4; // Line width
 
   vertex_marker.header.frame_id = "map";
   vertex_marker.header.stamp = this->get_clock()->now();
   vertex_marker.ns = "vertices";
   vertex_marker.type = visualization_msgs::msg::Marker::CYLINDER;
   vertex_marker.action = visualization_msgs::msg::Marker::ADD;
-  vertex_marker.scale.x = 0.2; // Sphere diameter
-  vertex_marker.scale.y = 0.2;
-  vertex_marker.scale.z = 0.2;
+  vertex_marker.scale.x = 0.4; // Sphere diameter
+  vertex_marker.scale.y = 0.4;
+  vertex_marker.scale.z = 0.1;
   vertex_marker.color.r = 0.0; // White color for text
-  vertex_marker.color.g = 0.0;
-  vertex_marker.color.b = 1.0;
-  vertex_marker.color.a = 0.8; // Full opacity
+  vertex_marker.color.g = 1.0;
+  vertex_marker.color.b = 0.0;
+  vertex_marker.color.a = 1.0; // Full opacity
 
   label_marker.header.frame_id = "map";
   label_marker.header.stamp = this->get_clock()->now();
@@ -209,12 +209,12 @@ visualization_msgs::msg::MarkerArray TopologyMapServer::get_visual_map() {
   for (size_t i = 0; i < edges_.size(); ++i) {
     for (size_t j = 0; j < edges_[i].size(); ++j) {
       if (edges_[i][j] >= 1) { // There is a connection between vertex i and j
-        double normalized_weight = (edges_[i][j] - min_weight) / (max_weight - min_weight);
+        // double normalized_weight = (edges_[i][j] - min_weight) / (max_weight - min_weight);
         std_msgs::msg::ColorRGBA color;
-        color.a = 1.0;                     // Full opacity
-        color.r = normalized_weight;       // Red decreases as weight increases
-        color.g = 1.0 - normalized_weight; // Green increases as weight increases
-        color.b = 0.0;                     // Blue remains 0 for the red-to-green gradient
+        color.a = 0.2; // Full opacity
+        color.r = 0.0; // Red decreases as weight increases
+        color.g = 1.0; // Green increases as weight increases
+        color.b = 0.0; // Blue remains 0 for the red-to-green gradient
 
         line_list_marker.points.push_back(vertices_[i].pose.position);
         line_list_marker.points.push_back(vertices_[j].pose.position);

@@ -127,9 +127,9 @@ nav2_util::CallbackReturn PlannerServer::on_configure(const rclcpp_lifecycle::St
                                                              std::bind(&PlannerServer::computePlan, this), nullptr,
                                                              std::chrono::milliseconds(500), true);
 
-  action_server_topology_ = std::make_unique<ActionServerToTopology>(
-      shared_from_this(), "compute_path_to_topology", std::bind(&PlannerServer::computeTopologyPlan, this), nullptr,
-      std::chrono::milliseconds(500), true);
+  // action_server_topology_ = std::make_unique<ActionServerToTopology>(
+  //     shared_from_this(), "compute_path_to_topology", std::bind(&PlannerServer::computeTopologyPlan, this), nullptr,
+  //     std::chrono::milliseconds(500), true);
 
   action_server_poses_ = std::make_unique<ActionServerThroughPoses>(
       shared_from_this(), "compute_path_through_poses", std::bind(&PlannerServer::computePlanThroughPoses, this),
@@ -144,7 +144,6 @@ nav2_util::CallbackReturn PlannerServer::on_activate(const rclcpp_lifecycle::Sta
   plan_publisher_->on_activate();
   action_server_pose_->activate();
   action_server_poses_->activate();
-  action_server_topology_->activate();
   costmap_ros_->activate();
 
   PlannerMap::iterator it;
@@ -172,7 +171,6 @@ nav2_util::CallbackReturn PlannerServer::on_deactivate(const rclcpp_lifecycle::S
 
   action_server_pose_->deactivate();
   action_server_poses_->deactivate();
-  action_server_topology_->deactivate();
   plan_publisher_->on_deactivate();
 
   /*
@@ -202,7 +200,6 @@ nav2_util::CallbackReturn PlannerServer::on_cleanup(const rclcpp_lifecycle::Stat
 
   action_server_pose_.reset();
   action_server_poses_.reset();
-  action_server_topology_.reset();
   plan_publisher_.reset();
   tf_.reset();
 
@@ -326,6 +323,7 @@ void PlannerServer::computePlanThroughPoses() {
     waitForCostmap();
 
     getPreemptedGoalIfRequested(action_server_poses_, goal);
+    RCLCPP_INFO(get_logger(), "goal_size: %ld", goal->goals.size());
 
     if (goal->goals.size() == 0) {
       RCLCPP_WARN(get_logger(), "Compute path through poses requested a plan with no viapoint poses, returning.");
@@ -443,110 +441,6 @@ void PlannerServer::computePlan() {
     RCLCPP_WARN(get_logger(), "%s plugin failed to plan calculation to (%.2f, %.2f): \"%s\"", goal->planner_id.c_str(),
                 goal->goal.pose.position.x, goal->goal.pose.position.y, ex.what());
     action_server_pose_->terminate_current();
-  }
-}
-
-void PlannerServer::computeTopologyPlan() {
-  RCLCPP_INFO(get_logger(), "ComputeTopologyPlan!!");
-  std::lock_guard<std::mutex> lock(dynamic_params_lock_);
-
-  auto start_time = this->now();
-
-  // Initialize the ComputePathToPose goal and result
-  auto goal = action_server_topology_->get_current_goal();
-
-  std::vector<geometry_msgs::msg::PoseStamped> goals;
-
-  auto result = std::make_shared<ActionToTopology::Result>();
-  nav_msgs::msg::Path concat_path;
-
-  try {
-    if (isServerInactive(action_server_topology_) || isCancelRequested(action_server_topology_)) {
-      return;
-    }
-
-    waitForCostmap();
-    getPreemptedGoalIfRequested(action_server_topology_, goal);
-
-    const auto &topology_map{goal->topology_map};
-
-    geometry_msgs::msg::PoseStamped pose_stamped;
-    pose_stamped.header.frame_id = "map";
-    pose_stamped.header.stamp = get_clock()->now();
-    pose_stamped.pose = topology_map.vertices[0].pose;
-
-    geometry_msgs::msg::PoseStamped pose_stamped2;
-    pose_stamped2.header.frame_id = "map";
-    pose_stamped2.header.stamp = get_clock()->now();
-    pose_stamped2.pose = topology_map.vertices[1].pose;
-
-    goals.push_back(pose_stamped);
-    goals.push_back(pose_stamped2);
-
-    // const auto &topologyMap = service_result.get()->topology;
-    // RCLCPP_INFO(get_logger(), "topology map size: %ld", topologyMap.vertices.size());
-
-    if (goals.size() == 0) {
-      RCLCPP_WARN(get_logger(), "Compute path through poses requested a plan with no viapoint poses, returning.");
-      action_server_topology_->terminate_current();
-    }
-
-    // Use start pose if provided otherwise use current robot pose
-    geometry_msgs::msg::PoseStamped start;
-    if (!getStartPose(action_server_topology_, goal, start)) {
-      return;
-    }
-
-    // Get consecutive paths through these points
-    geometry_msgs::msg::PoseStamped curr_start, curr_goal;
-    for (unsigned int i = 0; i != goals.size(); i++) {
-      // Get starting point
-      if (i == 0) {
-        curr_start = start;
-      } else {
-        // pick the end of the last planning task as the start for the next one
-        // to allow for path tolerance deviations
-        curr_start = concat_path.poses.back();
-        curr_start.header = concat_path.header;
-      }
-      curr_goal = goals[i];
-
-      // Transform them into the global frame
-      if (!transformPosesToGlobalFrame(action_server_topology_, curr_start, curr_goal)) {
-        return;
-      }
-
-      // Get plan from start -> goal
-      nav_msgs::msg::Path curr_path = getPlan(curr_start, curr_goal, goal->planner_id);
-
-      // check path for validity
-      if (!validatePath(action_server_topology_, curr_goal, curr_path, goal->planner_id)) {
-        return;
-      }
-
-      // Concatenate paths together
-      concat_path.poses.insert(concat_path.poses.end(), curr_path.poses.begin(), curr_path.poses.end());
-      concat_path.header = curr_path.header;
-    }
-
-    // Publish the plan for visualization purposes
-    result->path = concat_path;
-    publishPlan(result->path);
-
-    auto cycle_duration = this->now() - start_time;
-    result->planning_time = cycle_duration;
-
-    if (max_planner_duration_ && cycle_duration.seconds() > max_planner_duration_) {
-      RCLCPP_WARN(get_logger(), "Planner loop missed its desired rate of %.4f Hz. Current loop rate is %.4f Hz",
-                  1 / max_planner_duration_, 1 / cycle_duration.seconds());
-    }
-
-    action_server_topology_->succeeded_current(result);
-  } catch (std::exception &ex) {
-    RCLCPP_WARN(get_logger(), "%s plugin failed to plan through %zu points with final goal (%.2f, %.2f): \"%s\"",
-                goal->planner_id.c_str(), goals.size(), goals.back().pose.position.x, goals.back().pose.position.y,
-                ex.what());
-    action_server_topology_->terminate_current();
   }
 }
 

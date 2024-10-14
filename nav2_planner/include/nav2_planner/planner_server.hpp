@@ -18,6 +18,7 @@
 #include <chrono>
 #include <memory>
 #include <mutex>
+#include <queue>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -150,6 +151,11 @@ protected:
   template <typename T>
   bool getStartPose(std::unique_ptr<nav2_util::SimpleActionServer<T>> &action_server,
                     typename std::shared_ptr<const typename T::Goal> goal, geometry_msgs::msg::PoseStamped &start);
+
+  template <typename T>
+  std::vector<geometry_msgs::msg::PoseStamped>
+  getTopologyGoals(std::unique_ptr<nav2_util::SimpleActionServer<T>> &action_server,
+                   typename std::shared_ptr<const typename T::Goal>);
 
   /**
    * @brief Transform start and goal poses into the costmap

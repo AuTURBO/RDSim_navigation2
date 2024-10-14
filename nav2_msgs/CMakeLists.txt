@@ -50,7 +50,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/TopologyMap.msg"
   "srv/GetTopologyMap.srv"
   "action/NavigateToTopology.action"
-  "action/ComputePathToTopology.action"
+  "action/ComputeGoalToTopology.action"
   DEPENDENCIES builtin_interfaces geometry_msgs std_msgs action_msgs nav_msgs
 )
 

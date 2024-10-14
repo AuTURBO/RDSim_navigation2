@@ -202,8 +202,8 @@ add_library(nav2_goal_updated_controller_bt_node SHARED plugins/decorator/goal_u
 list(APPEND plugin_libs nav2_goal_updated_controller_bt_node)
 
 # Topology
-add_library(nav2_compute_path_to_topology_action_bt_node SHARED plugins/action/compute_path_to_topology_action.cpp)
-list(APPEND plugin_libs nav2_compute_path_to_topology_action_bt_node)
+add_library(nav2_compute_goal_to_topology_bt_node SHARED plugins/action/compute_goal_to_topology_action.cpp)
+list(APPEND plugin_libs nav2_compute_goal_to_topology_bt_node)
 
 foreach(bt_plugin ${plugin_libs})
   ament_target_dependencies(${bt_plugin} ${dependencies})
