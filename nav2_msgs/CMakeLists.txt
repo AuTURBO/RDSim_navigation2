@@ -45,6 +45,12 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "action/Spin.action"
   "action/DummyBehavior.action"
   "action/FollowWaypoints.action"
+
+  "msg/TopologyVertex.msg"
+  "msg/TopologyMap.msg"
+  "srv/GetTopologyMap.srv"
+  "action/NavigateToTopology.action"
+  "action/ComputeGoalToTopology.action"
   DEPENDENCIES builtin_interfaces geometry_msgs std_msgs action_msgs nav_msgs
 )
 

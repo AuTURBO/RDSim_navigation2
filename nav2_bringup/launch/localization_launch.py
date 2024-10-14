@@ -32,6 +32,7 @@ def generate_launch_description():
 
     namespace = LaunchConfiguration('namespace')
     map_yaml_file = LaunchConfiguration('map')
+    topology_yaml_file = LaunchConfiguration('topology_map')
     use_sim_time = LaunchConfiguration('use_sim_time')
     autostart = LaunchConfiguration('autostart')
     params_file = LaunchConfiguration('params_file')
@@ -41,7 +42,7 @@ def generate_launch_description():
     use_respawn = LaunchConfiguration('use_respawn')
     log_level = LaunchConfiguration('log_level')
 
-    lifecycle_nodes = ['map_server', 'amcl']
+    lifecycle_nodes = ['map_server', 'amcl', 'topology_map_server']
 
     # Map fully qualified names to relative ones so the node's namespace can be prepended.
     # In case of the transforms (tf), currently, there doesn't seem to be a better alternative
@@ -55,7 +56,9 @@ def generate_launch_description():
     # Create our own temporary YAML files that include substitutions
     param_substitutions = {
         'use_sim_time': use_sim_time,
-        'yaml_filename': map_yaml_file}
+        'yaml_filename': map_yaml_file,
+        'topology_yaml_filename': topology_yaml_file,
+    }
 
     configured_params = ParameterFile(
         RewrittenYaml(
@@ -121,6 +124,16 @@ def generate_launch_description():
                 arguments=['--ros-args', '--log-level', log_level],
                 remappings=remappings),
             Node(
+                package='nav2_topology_map_server',
+                executable='topology_map_server',
+                name='topology_map_server',
+                output='screen',
+                respawn=use_respawn,
+                respawn_delay=2.0,
+                parameters=[configured_params],
+                arguments=['--ros-args', '--log-level', log_level],
+                remappings=remappings),
+            Node(
                 package='nav2_amcl',
                 executable='amcl',
                 name='amcl',
@@ -150,6 +163,12 @@ def generate_launch_description():
                 package='nav2_map_server',
                 plugin='nav2_map_server::MapServer',
                 name='map_server',
+                parameters=[configured_params],
+                remappings=remappings),
+            ComposableNode(
+                package='nav2_topology_map_server',
+                plugin='nav2_topology_map_server::TopologyMapServer',
+                name='topology_map_server',
                 parameters=[configured_params],
                 remappings=remappings),
             ComposableNode(

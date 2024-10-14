@@ -38,6 +38,7 @@ def generate_launch_description():
     use_namespace = LaunchConfiguration('use_namespace')
     slam = LaunchConfiguration('slam')
     map_yaml_file = LaunchConfiguration('map')
+    topology_yaml_file = LaunchConfiguration('topology_map')
     use_sim_time = LaunchConfiguration('use_sim_time')
     params_file = LaunchConfiguration('params_file')
     autostart = LaunchConfiguration('autostart')
@@ -98,6 +99,11 @@ def generate_launch_description():
         'map',
         default_value=os.path.join(bringup_dir, 'maps', 'map.yaml'),
         description='Full path to map file to load')
+    
+    declare_topology_map_yaml_cmd = DeclareLaunchArgument(
+        'topology_map',
+        default_value="",
+        description='Full path to topology map file to load')
 
     declare_use_sim_time_cmd = DeclareLaunchArgument(
         'use_sim_time',
@@ -156,6 +162,7 @@ def generate_launch_description():
             condition=IfCondition(PythonExpression(['not ', slam])),
             launch_arguments={'namespace': namespace,
                               'map': map_yaml_file,
+                              'topology_map': topology_yaml_file,
                               'use_sim_time': use_sim_time,
                               'autostart': autostart,
                               'params_file': params_file,
@@ -185,6 +192,7 @@ def generate_launch_description():
     ld.add_action(declare_use_namespace_cmd)
     ld.add_action(declare_slam_cmd)
     ld.add_action(declare_map_yaml_cmd)
+    ld.add_action(declare_topology_map_yaml_cmd)
     ld.add_action(declare_use_sim_time_cmd)
     ld.add_action(declare_params_file_cmd)
     ld.add_action(declare_autostart_cmd)

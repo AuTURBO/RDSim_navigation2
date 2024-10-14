@@ -200,6 +200,13 @@
       <input_port name="server_timeout">Server timeout</input_port>
     </Action>
 
+    <Action ID="ComputeGoalToTopology">
+      <input_port name="start_vertex_id">start_vertex_id</input_port>
+      <input_port name="end_vertex_id">end_vertex_id</input_port>
+      <input_port name="input_goals">input_goals</input_port>
+      <input_port name="output_goals">output_goals</input_port>
+    </Action>
+
     <!-- ############################### CONDITION NODES ############################## -->
     <Condition ID="GoalReached">
         <input_port name="goal">Destination</input_port>
