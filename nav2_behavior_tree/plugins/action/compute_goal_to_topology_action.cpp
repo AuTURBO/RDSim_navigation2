@@ -87,9 +87,28 @@ BT::NodeStatus ComputeGoalToTopologyAction::tick() {
   pose_stamped.header.stamp = node_->get_clock()->now();
   int cur_vertex_id = end_id;
 
+  // 이전 좌표와 현재 좌표를 이용하여 각도를 계산
+  double prev_x = topology_map.vertices[table[end_id].first].pose.position.x;
+  double prev_y = topology_map.vertices[table[end_id].first].pose.position.y;
+  double cur_x = topology_map.vertices[end_id].pose.position.x;
+  double cur_y = topology_map.vertices[end_id].pose.position.y;
+
+  // atan2를 사용하여 두 점 사이의 방향을 계산
+  tf2::Quaternion q;
+  // 기존 코드에서 구한 atan2 각도를 기준으로 90도(π/2 라디안)를 더해줌
+  q.setRPY(0, 0, atan2(cur_y - prev_y, cur_x - prev_x));
+
+
+  // 쿼터니언을 orientation으로 변환하여 설정
   for (;;) {
     pose_stamped.header.stamp = node_->get_clock()->now();
     pose_stamped.pose = topology_map.vertices[cur_vertex_id].pose;
+    // 쿼터니언의 각 축 값을 설정
+    pose_stamped.pose.orientation.x = q.x();
+    pose_stamped.pose.orientation.y = q.y();
+    pose_stamped.pose.orientation.z = q.z();
+    pose_stamped.pose.orientation.w = q.w();
+
     goals.push_back(pose_stamped);
     if (table[cur_vertex_id].first == -1 || cur_vertex_id == start_id) {
       break;

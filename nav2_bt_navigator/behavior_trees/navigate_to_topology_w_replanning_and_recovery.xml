@@ -8,7 +8,7 @@
     <RecoveryNode number_of_retries="6" name="NavigateRecovery">
       <PipelineSequence name="NavigateWithReplanning">
         <RateController hz="0.333">
-          <RecoveryNode number_of_retries="1" name="ComputePathToTopology">
+          <RecoveryNode number_of_retries="10" name="ComputePathToTopology">
             <ReactiveSequence>
               <ComputeGoalToTopology start_vertex_id="{start_vertex_id}" end_vertex_id="{end_vertex_id}" input_goals="{goals}" output_goals="{goals}" />
               <RemovePassedGoals input_goals="{goals}" output_goals="{goals}" radius="0.7"/>
