@@ -12,24 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string>
-#include <memory>
 #include <limits>
+#include <memory>
+#include <string>
 
-#include "nav_msgs/msg/path.hpp"
 #include "nav2_util/geometry_utils.hpp"
+#include "nav_msgs/msg/path.hpp"
 
 #include "nav2_behavior_tree/plugins/action/remove_passed_goals_action.hpp"
 
-namespace nav2_behavior_tree
-{
+namespace nav2_behavior_tree {
 
-RemovePassedGoals::RemovePassedGoals(
-  const std::string & name,
-  const BT::NodeConfiguration & conf)
-: BT::ActionNodeBase(name, conf),
-  viapoint_achieved_radius_(0.5)
-{
+RemovePassedGoals::RemovePassedGoals(const std::string &name, const BT::NodeConfiguration &conf)
+    : BT::ActionNodeBase(name, conf), viapoint_achieved_radius_(0.5) {
   getInput("radius", viapoint_achieved_radius_);
 
   getInput("global_frame", global_frame_);
@@ -39,8 +34,7 @@ RemovePassedGoals::RemovePassedGoals(
   node->get_parameter("transform_tolerance", transform_tolerance_);
 }
 
-inline BT::NodeStatus RemovePassedGoals::tick()
-{
+inline BT::NodeStatus RemovePassedGoals::tick() {
   setStatus(BT::NodeStatus::RUNNING);
 
   Goals goal_poses;
@@ -51,13 +45,10 @@ inline BT::NodeStatus RemovePassedGoals::tick()
     return BT::NodeStatus::SUCCESS;
   }
 
-  using namespace nav2_util::geometry_utils;  // NOLINT
+  using namespace nav2_util::geometry_utils; // NOLINT
 
   geometry_msgs::msg::PoseStamped current_pose;
-  if (!nav2_util::getCurrentPose(
-      current_pose, *tf_, global_frame_, robot_base_frame_,
-      transform_tolerance_))
-  {
+  if (!nav2_util::getCurrentPose(current_pose, *tf_, global_frame_, robot_base_frame_, transform_tolerance_)) {
     return BT::NodeStatus::FAILURE;
   }
 
@@ -77,10 +68,7 @@ inline BT::NodeStatus RemovePassedGoals::tick()
   return BT::NodeStatus::SUCCESS;
 }
 
-}  // namespace nav2_behavior_tree
+} // namespace nav2_behavior_tree
 
 #include "behaviortree_cpp_v3/bt_factory.h"
-BT_REGISTER_NODES(factory)
-{
-  factory.registerNodeType<nav2_behavior_tree::RemovePassedGoals>("RemovePassedGoals");
-}
+BT_REGISTER_NODES(factory) { factory.registerNodeType<nav2_behavior_tree::RemovePassedGoals>("RemovePassedGoals"); }

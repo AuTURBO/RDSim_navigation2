@@ -87,9 +87,23 @@ BT::NodeStatus ComputeGoalToTopologyAction::tick() {
   pose_stamped.header.stamp = node_->get_clock()->now();
   int cur_vertex_id = end_id;
 
+  double prev_x = topology_map.vertices[table[end_id].first].pose.position.x;
+  double prev_y = topology_map.vertices[table[end_id].first].pose.position.y;
+  double cur_x = topology_map.vertices[end_id].pose.position.x;
+  double cur_y = topology_map.vertices[end_id].pose.position.y;
+
+  tf2::Quaternion q;
+  q.setRPY(0, 0, atan2(cur_y - prev_y, cur_x - prev_x));
+
   for (;;) {
     pose_stamped.header.stamp = node_->get_clock()->now();
     pose_stamped.pose = topology_map.vertices[cur_vertex_id].pose;
+    // 쿼터니언의 각 축 값을 설정
+    pose_stamped.pose.orientation.x = q.x();
+    pose_stamped.pose.orientation.y = q.y();
+    pose_stamped.pose.orientation.z = q.z();
+    pose_stamped.pose.orientation.w = q.w();
+
     goals.push_back(pose_stamped);
     if (table[cur_vertex_id].first == -1 || cur_vertex_id == start_id) {
       break;
