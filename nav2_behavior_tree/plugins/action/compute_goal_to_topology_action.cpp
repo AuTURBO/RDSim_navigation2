@@ -98,7 +98,7 @@ BT::NodeStatus ComputeGoalToTopologyAction::tick() {
   for (;;) {
     pose_stamped.header.stamp = node_->get_clock()->now();
     pose_stamped.pose = topology_map.vertices[cur_vertex_id].pose;
-    // 쿼터니언의 각 축 값을 설정
+    
     pose_stamped.pose.orientation.x = q.x();
     pose_stamped.pose.orientation.y = q.y();
     pose_stamped.pose.orientation.z = q.z();
