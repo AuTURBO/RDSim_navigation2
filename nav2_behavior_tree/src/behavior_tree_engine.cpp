@@ -21,6 +21,7 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "behaviortree_cpp_v3/utils/shared_library.h"
+#include "behaviortree_cpp_v3/loggers/groot2_publisher.h"
 
 namespace nav2_behavior_tree
 {
@@ -43,6 +44,7 @@ BehaviorTreeEngine::run(
 {
   rclcpp::WallRate loopRate(loopTimeout);
   BT::NodeStatus result = BT::NodeStatus::RUNNING;
+  BT::Groot2Publisher publisher(*tree, 5555);
 
   // Loop until something happens with ROS or the node completes
   try {
