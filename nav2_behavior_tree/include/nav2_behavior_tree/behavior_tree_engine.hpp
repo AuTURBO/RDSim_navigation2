@@ -22,13 +22,12 @@
 
 #include "behaviortree_cpp_v3/behavior_tree.h"
 #include "behaviortree_cpp_v3/bt_factory.h"
-#include "behaviortree_cpp_v3/xml_parsing.h"
 #include "behaviortree_cpp_v3/loggers/bt_zmq_publisher.h"
+#include "behaviortree_cpp_v3/xml_parsing.h"
 
 #include "rclcpp/rclcpp.hpp"
 
-namespace nav2_behavior_tree
-{
+namespace nav2_behavior_tree {
 
 /**
  * @enum nav2_behavior_tree::BtStatus
@@ -40,15 +39,14 @@ enum class BtStatus { SUCCEEDED, FAILED, CANCELED };
  * @class nav2_behavior_tree::BehaviorTreeEngine
  * @brief A class to create and handle behavior trees
  */
-class BehaviorTreeEngine
-{
+class BehaviorTreeEngine {
 public:
   /**
    * @brief A constructor for nav2_behavior_tree::BehaviorTreeEngine
    * @param plugin_libraries vector of BT plugin library names to load
    */
-  explicit BehaviorTreeEngine(
-    const std::vector<std::string> & plugin_libraries);
+  explicit BehaviorTreeEngine(const std::vector<std::string> &plugin_libraries);
+  explicit BehaviorTreeEngine(const std::vector<std::string> &plugin_libraries, int16_t zmq_port);
   virtual ~BehaviorTreeEngine() {}
 
   /**
@@ -59,11 +57,8 @@ public:
    * @param loopTimeout Time period for each iteration of BT execution
    * @return nav2_behavior_tree::BtStatus Status of BT execution
    */
-  BtStatus run(
-    BT::Tree * tree,
-    std::function<void()> onLoop,
-    std::function<bool()> cancelRequested,
-    std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(10));
+  BtStatus run(BT::Tree *tree, std::function<void()> onLoop, std::function<bool()> cancelRequested,
+               std::chrono::milliseconds loopTimeout = std::chrono::milliseconds(10));
 
   /**
    * @brief Function to create a BT from a XML string
@@ -71,9 +66,7 @@ public:
    * @param blackboard Blackboard for BT
    * @return BT::Tree Created behavior tree
    */
-  BT::Tree createTreeFromText(
-    const std::string & xml_string,
-    BT::Blackboard::Ptr blackboard);
+  BT::Tree createTreeFromText(const std::string &xml_string, BT::Blackboard::Ptr blackboard);
 
   /**
    * @brief Function to create a BT from an XML file
@@ -81,21 +74,21 @@ public:
    * @param blackboard Blackboard for BT
    * @return BT::Tree Created behavior tree
    */
-  BT::Tree createTreeFromFile(
-    const std::string & file_path,
-    BT::Blackboard::Ptr blackboard);
+  BT::Tree createTreeFromFile(const std::string &file_path, BT::Blackboard::Ptr blackboard);
 
   /**
    * @brief Function to explicitly reset all BT nodes to initial state
    * @param root_node Pointer to BT root node
    */
-  void haltAllActions(BT::TreeNode * root_node);
+  void haltAllActions(BT::TreeNode *root_node);
+  void setZmqPort(int16_t zmq_port);
 
 protected:
   // The factory that will be used to dynamically construct the behavior tree
   BT::BehaviorTreeFactory factory_;
+  int16_t zmq_port_{5555};
 };
 
-}  // namespace nav2_behavior_tree
+} // namespace nav2_behavior_tree
 
-#endif  // NAV2_BEHAVIOR_TREE__BEHAVIOR_TREE_ENGINE_HPP_
+#endif // NAV2_BEHAVIOR_TREE__BEHAVIOR_TREE_ENGINE_HPP_

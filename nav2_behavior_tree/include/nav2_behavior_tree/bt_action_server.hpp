@@ -25,36 +25,28 @@
 #include "nav2_util/lifecycle_node.hpp"
 #include "nav2_util/simple_action_server.hpp"
 
-namespace nav2_behavior_tree
-{
+namespace nav2_behavior_tree {
 /**
  * @class nav2_behavior_tree::BtActionServer
  * @brief An action server that uses behavior tree to execute an action
  */
-template<class ActionT>
-class BtActionServer
-{
+template <class ActionT> class BtActionServer {
 public:
   using ActionServer = nav2_util::SimpleActionServer<ActionT>;
 
-  typedef std::function<bool (typename ActionT::Goal::ConstSharedPtr)> OnGoalReceivedCallback;
-  typedef std::function<void ()> OnLoopCallback;
-  typedef std::function<void (typename ActionT::Goal::ConstSharedPtr)> OnPreemptCallback;
-  typedef std::function<void (typename ActionT::Result::SharedPtr,
-      nav2_behavior_tree::BtStatus)> OnCompletionCallback;
+  typedef std::function<bool(typename ActionT::Goal::ConstSharedPtr)> OnGoalReceivedCallback;
+  typedef std::function<void()> OnLoopCallback;
+  typedef std::function<void(typename ActionT::Goal::ConstSharedPtr)> OnPreemptCallback;
+  typedef std::function<void(typename ActionT::Result::SharedPtr, nav2_behavior_tree::BtStatus)> OnCompletionCallback;
 
   /**
    * @brief A constructor for nav2_behavior_tree::BtActionServer class
    */
-  explicit BtActionServer(
-    const rclcpp_lifecycle::LifecycleNode::WeakPtr & parent,
-    const std::string & action_name,
-    const std::vector<std::string> & plugin_lib_names,
-    const std::string & default_bt_xml_filename,
-    OnGoalReceivedCallback on_goal_received_callback,
-    OnLoopCallback on_loop_callback,
-    OnPreemptCallback on_preempt_callback,
-    OnCompletionCallback on_completion_callback);
+  explicit BtActionServer(const rclcpp_lifecycle::LifecycleNode::WeakPtr &parent, const std::string &action_name,
+                          const std::vector<std::string> &plugin_lib_names, const std::string &default_bt_xml_filename,
+                          OnGoalReceivedCallback on_goal_received_callback, OnLoopCallback on_loop_callback,
+                          OnPreemptCallback on_preempt_callback, OnCompletionCallback on_completion_callback,
+                          int16_t debug_port = 5555);
 
   /**
    * @brief A destructor for nav2_behavior_tree::BtActionServer class
@@ -93,58 +85,44 @@ public:
    * @return bool true if the resulting BT correspond to the one in bt_xml_filename. false
    * if something went wrong, and previous BT is maintained
    */
-  bool loadBehaviorTree(const std::string & bt_xml_filename = "");
+  bool loadBehaviorTree(const std::string &bt_xml_filename = "");
 
   /**
    * @brief Getter function for BT Blackboard
    * @return BT::Blackboard::Ptr Shared pointer to current BT blackboard
    */
-  BT::Blackboard::Ptr getBlackboard() const
-  {
-    return blackboard_;
-  }
+  BT::Blackboard::Ptr getBlackboard() const { return blackboard_; }
 
   /**
    * @brief Getter function for current BT XML filename
    * @return string Containing current BT XML filename
    */
-  std::string getCurrentBTFilename() const
-  {
-    return current_bt_xml_filename_;
-  }
+  std::string getCurrentBTFilename() const { return current_bt_xml_filename_; }
 
   /**
    * @brief Getter function for default BT XML filename
    * @return string Containing default BT XML filename
    */
-  std::string getDefaultBTFilename() const
-  {
-    return default_bt_xml_filename_;
-  }
+  std::string getDefaultBTFilename() const { return default_bt_xml_filename_; }
 
   /**
    * @brief Wrapper function to accept pending goal if a preempt has been requested
    * @return Shared pointer to pending action goal
    */
-  const std::shared_ptr<const typename ActionT::Goal> acceptPendingGoal()
-  {
+  const std::shared_ptr<const typename ActionT::Goal> acceptPendingGoal() {
     return action_server_->accept_pending_goal();
   }
 
   /**
    * @brief Wrapper function to terminate pending goal if a preempt has been requested
    */
-  void terminatePendingGoal()
-  {
-    action_server_->terminate_pending_goal();
-  }
+  void terminatePendingGoal() { action_server_->terminate_pending_goal(); }
 
   /**
    * @brief Wrapper function to get current goal
    * @return Shared pointer to current action goal
    */
-  const std::shared_ptr<const typename ActionT::Goal> getCurrentGoal() const
-  {
+  const std::shared_ptr<const typename ActionT::Goal> getCurrentGoal() const {
     return action_server_->get_current_goal();
   }
 
@@ -152,16 +130,14 @@ public:
    * @brief Wrapper function to get pending goal
    * @return Shared pointer to pending action goal
    */
-  const std::shared_ptr<const typename ActionT::Goal> getPendingGoal() const
-  {
+  const std::shared_ptr<const typename ActionT::Goal> getPendingGoal() const {
     return action_server_->get_pending_goal();
   }
 
   /**
    * @brief Wrapper function to publish action feedback
    */
-  void publishFeedback(typename std::shared_ptr<typename ActionT::Feedback> feedback)
-  {
+  void publishFeedback(typename std::shared_ptr<typename ActionT::Feedback> feedback) {
     action_server_->publish_feedback(feedback);
   }
 
@@ -169,19 +145,13 @@ public:
    * @brief Getter function for the current BT tree
    * @return BT::Tree Current behavior tree
    */
-  const BT::Tree & getTree() const
-  {
-    return tree_;
-  }
+  const BT::Tree &getTree() const { return tree_; }
 
   /**
    * @brief Function to halt the current tree. It will interrupt the execution of RUNNING nodes
    * by calling their halt() implementation (only for Async nodes that may return RUNNING)
    */
-  void haltTree()
-  {
-    tree_.rootNode()->halt();
-  }
+  void haltTree() { tree_.rootNode()->halt(); }
 
 protected:
   /**
@@ -243,9 +213,11 @@ protected:
   OnLoopCallback on_loop_callback_;
   OnPreemptCallback on_preempt_callback_;
   OnCompletionCallback on_completion_callback_;
+
+  int16_t debug_port_;
 };
 
-}  // namespace nav2_behavior_tree
+} // namespace nav2_behavior_tree
 
-#include <nav2_behavior_tree/bt_action_server_impl.hpp>  // NOLINT(build/include_order)
-#endif  // NAV2_BEHAVIOR_TREE__BT_ACTION_SERVER_HPP_
+#include <nav2_behavior_tree/bt_action_server_impl.hpp> // NOLINT(build/include_order)
+#endif                                                  // NAV2_BEHAVIOR_TREE__BT_ACTION_SERVER_HPP_
