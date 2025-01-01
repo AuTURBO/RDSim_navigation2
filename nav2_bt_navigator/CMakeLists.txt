@@ -18,6 +18,8 @@ find_package(nav2_util REQUIRED)
 find_package(nav2_core REQUIRED)
 find_package(tf2_ros REQUIRED)
 
+message(STATUS "Current source directory: ${CMAKE_CURRENT_SOURCE_DIR}")
+
 if(behaviortree_cpp_v3_FOUND)
     if(behaviortree_cpp_v3_VERSION)
         message(WARNING "Found behaviortree_cpp_v3 version: ${behaviortree_cpp_v3_VERSION}")
