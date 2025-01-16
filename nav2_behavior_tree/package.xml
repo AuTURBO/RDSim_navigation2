@@ -9,7 +9,7 @@
   <maintainer email="mohammad.haghighipanah@intel.com">Carlos Orduno</maintainer>
   <license>Apache-2.0</license>
 
-  <depend>behaviortree_cpp_v3 == 3.8.4</depend>
+  <depend>behaviortree_cpp_v3</depend>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
   <build_export_depend>tf2_geometry_msgs</build_export_depend>
