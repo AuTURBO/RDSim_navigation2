@@ -8,10 +8,10 @@
     <RecoveryNode number_of_retries="6" name="NavigateRecovery">
       <PipelineSequence name="NavigateWithReplanning">
         <RateController hz="0.333">
-          <RecoveryNode number_of_retries="10" name="ComputePathToTopology">
+          <RecoveryNode number_of_retries="1" name="ComputePathToTopology">
             <ReactiveSequence>
               <ComputeGoalToTopology start_vertex_id="{start_vertex_id}" end_vertex_id="{end_vertex_id}" input_goals="{goals}" output_goals="{goals}" />
-              <RemovePassedGoals input_goals="{goals}" output_goals="{goals}" radius="0.7"/>
+              <RemovePassedGoals input_goals="{goals}" output_goals="{goals}" radius="1.5"/>
               <ComputePathThroughPoses goals="{goals}" path="{path}" planner_id="GridBased"/>
             </ReactiveSequence>
             <ClearEntireCostmap name="ClearGlobalCostmap-Context" service_name="global_costmap/clear_entirely_global_costmap"/>
@@ -30,7 +30,6 @@
             <ClearEntireCostmap name="ClearGlobalCostmap-Subtree" service_name="global_costmap/clear_entirely_global_costmap"/>
           </Sequence>
           <Spin spin_dist="1.57"/>
-          <Wait wait_duration="5"/>
           <BackUp backup_dist="0.30" backup_speed="0.05"/>
         </RoundRobin>
       </ReactiveFallback>
